@@ -4,7 +4,7 @@
 
 ---
 
-## 🚀 Features
+##  Features
 
 ### 🔐 Authentication
 - Signup and Login with JWT-based authentication
@@ -39,6 +39,28 @@
 | Postman        | API Testing Tool                 |
 
 ---
+## API ENDPOINTS
 
-## 🗂️ Folder Structure
+🔐 Auth
+POST /api/auth/signup – Register a new user
+
+POST /api/auth/login – Authenticate and receive token
+
+👤 Users
+GET /api/users – List all developers
+
+GET /api/users/:id – View a specific profile
+
+PUT /api/users/edit – Edit current user's profile
+
+POST /api/users/follow/:id – Follow a user
+
+POST /api/users/unfollow/:id – Unfollow a user
+
+📝 Posts
+POST /api/posts – Create a post
+
+GET /api/posts/feed – Get feed from followed users
+
+DELETE /api/posts/:id – Delete a post
 
