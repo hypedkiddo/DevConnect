@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../generated/prisma"
@@ -14,10 +8,61 @@ datasource db {
   url      = "postgresql://neondb_owner:npg_PSE7ZXHo0mFC@ep-old-sunset-abxmlk64-pooler.eu-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 }
 
+
+//Schema starts from here
 model User {
-  id         Int      @id @default(autoincrement())
-  username   String   @unique
+  id         Int       @id @default(autoincrement())
+  username   String    @unique
+  email      String    @unique
   password   String
-  firstName  String
-  lastName   String
+  bio        String?
+  avatarUrl  String?   // profile picture
+  createdAt  DateTime  @default(now())
+
+  posts      Post[]
+  comments   Comment[]
+  following  Follow[]  @relation("Following")
+  followers  Follow[]  @relation("Followers")
+  skills     Skill[]
 }
+
+model Post {
+  id         Int       @id @default(autoincrement())
+  content    String
+  imageUrl   String?   // optional image
+  createdAt  DateTime  @default(now())
+  authorId   Int
+  author     User      @relation(fields: [authorId], references: [id])
+
+  comments   Comment[]
+}
+
+model Comment {
+  id         Int       @id @default(autoincrement())
+  content    String
+  createdAt  DateTime  @default(now())
+  author     User      @relation(fields: [authorId], references: [id])
+  authorId   Int
+  post       Post      @relation(fields: [postId], references: [id])
+  postId     Int
+}
+
+model Follow {
+  id         Int       @id @default(autoincrement())
+  follower   User      @relation("Following", fields: [followerId], references: [id])
+  followerId Int
+  following  User      @relation("Followers", fields: [followingId], references: [id])
+  followingId Int
+  createdAt  DateTime  @default(now())
+
+  @@unique([followerId, followingId])
+}
+
+model Skill {
+  id         Int       @id @default(autoincrement())
+  name       String
+  user       User      @relation(fields: [userId], references: [id])
+  userId     Int
+}
+
+
