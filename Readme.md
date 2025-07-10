@@ -39,6 +39,10 @@
 | Postman        | API Testing Tool                 |
 
 ---
+## DATABASE SCHEMA DESIGN
+https://app.eraser.io/workspace/uBLRG0Uj8NkS2QDQfHBg?origin=share
+
+---
 ## API ENDPOINTS
 
 🔐 Auth
