@@ -28,11 +28,11 @@
 
 | Technology     | Description                      |
 |----------------|----------------------------------|
-| MongoDB Atlas  | NoSQL Cloud Database             |
+| Neon Db        | Postgresql based Cloud Database  |
 | Express.js     | Backend Web Framework (Node.js)  |
 | React.js       | Frontend UI Library              |
 | Node.js        | JavaScript Runtime               |
-| Mongoose       | ODM for MongoDB                  |
+| Prisma ORM     |     ORM                          |
 | JWT            | Authentication System            |
 | Axios          | HTTP Client for API Requests     |
 | Tailwind CSS   | (Optional) Frontend Styling      |
