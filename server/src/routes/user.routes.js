@@ -4,14 +4,14 @@ import {registerUser,loginUser,logoutuser} from "../controllers/user.controller.
 
 const router=Router();
 //Register route
-router.route("./register").post(upload.fields([
+router.route("/register").post(upload.fields([
     {
         name:"avatar",
         maxCount:1
     }
 ]),registerUser);
 //Login route
-router.route("./login").post(loginUser);
+router.route("/login").post(loginUser);
 //Logout user
-router.route("./logout").post(loginUser);
+router.route("/logout").post(logoutuser);
 export default router;

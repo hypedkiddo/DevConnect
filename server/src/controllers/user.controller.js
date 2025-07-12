@@ -2,7 +2,7 @@ import prisma from "../db/db.config.js";
 import bcrypt from "bcrypt"
 import { Apierror } from "../utils/ApiError.js";
 import { Apiresponse } from "../utils/Apiresponse.js";
-import {generateAcessToken,generateRefreshToken} from "../utils/generateToken.js"
+import {generateAccessToken,generateRefreshToken} from "../utils/generateToken.js"
 import { uploadOnCloudinary } from "../utils/cloudinaryconfig.js";
 
 //Registeruser
@@ -18,7 +18,7 @@ const registerUser=async(req,res)=>{
         const hashedpassword= await bcrypt.hash(password,10);
         const avatarUrlLocal=await req.files?.avatar[0]?.path;
         if(!avatarUrlLocal){
-             throw new ApiError(400,"Avatar file is required or multer error has occured")
+             throw new Apierror(400,"Avatar file is required or multer error has occured")
         }
         //Upload to cloudinary
         const avatarUrl=await uploadOnCloudinary(avatarUrlLocal);
@@ -27,7 +27,7 @@ const registerUser=async(req,res)=>{
             data:{
                 username,
                 email,
-                hashedpassword,
+                password:hashedpassword,
                 bio,
                 avatarUrl
             },
@@ -55,14 +55,14 @@ const loginUser=async(req,res)=>{
         if(!isCorrect){
              return res.status(400).json({error:"Invalid user credentials"})
         }
-       const accessToken=await generateAcessToken(user.id);
+       const accessToken=await generateAccessToken(user.id);
        const newrefershToken=await generateRefreshToken(user.id);
        //add refreshToken
        await prisma.user.update(
         {
             where:{id:user.id},
             data:{
-                refershToken:newrefershToken
+                 refreshToken:newrefershToken
             }
         },
        );
@@ -74,15 +74,16 @@ const loginUser=async(req,res)=>{
 }
 //logout user
 const logoutuser=async(req,res)=>{
-    const user=await prisma.user.findUnique({
-        where:{id}
-    })
+    const userId = req.user?.id;
+    if (!userId) {
+        return res.status(401).json({ error: "Unauthorized" });
+    }
     //remove refreshToken
      await prisma.user.update(
         {
-            where:{id:user.id},
+            where:{id:userId},
             data:{
-                refershToken:""
+               refreshToken:""
             }
         },
        );
