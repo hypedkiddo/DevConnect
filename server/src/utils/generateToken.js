@@ -22,4 +22,4 @@ const generateRefreshToken=(userid)=>{
     return token;
 };
 
-export default {generateAccessToken,generateRefreshToken};
+export  {generateAccessToken,generateRefreshToken};

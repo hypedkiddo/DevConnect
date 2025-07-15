@@ -89,4 +89,4 @@ const logoutuser=async(req,res)=>{
        );
     res.status(200).json(new Apiresponse(200,{},"User logged out"));
 }
-export default {registerUser,loginUser,logoutuser}
+export {registerUser,loginUser,logoutuser}
