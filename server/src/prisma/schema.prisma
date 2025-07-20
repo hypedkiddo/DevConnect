@@ -8,7 +8,6 @@ datasource db {
   url=env("DATABASE_URL")
 }
 
-
 //Schema starts from here
 model User {
   id         Int       @id @default(autoincrement())
@@ -17,7 +16,7 @@ model User {
   password   String
   bio        String?
   avatarUrl  String?   // profile picture
-  refreshToken String
+  refreshToken String?
   createdAt  DateTime  @default(now())
 
   posts      Post[]

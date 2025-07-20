@@ -7,6 +7,7 @@ import { uploadOnCloudinary } from "../utils/cloudinaryconfig.js";
 
 //Registeruser
 const registerUser=async(req,res)=>{
+    console.log("Control has reached the controller")
     const {username,email,password,bio}=req.body
     try {
         //Check if user exists
@@ -16,12 +17,16 @@ const registerUser=async(req,res)=>{
         }
         //hash password
         const hashedpassword= await bcrypt.hash(password,10);
+        console.log(req.files?.avatar[0]?.path);
         const avatarUrlLocal=await req.files?.avatar[0]?.path;
+        // console.log(avatarUrlLocal);
         if(!avatarUrlLocal){
-             throw new Apierror(400,"Avatar file is required or multer error has occured")
+             throw new Apierror(400,"Media file is required or multer error has occured")
         }
         //Upload to cloudinary
         const avatarUrl=await uploadOnCloudinary(avatarUrlLocal);
+        console.log("Sucessfully uploaded on cloudinary");
+        console.log(avatarUrl);
         //Save to db
         const createduser=await prisma.user.create({
             data:{
@@ -29,13 +34,16 @@ const registerUser=async(req,res)=>{
                 email,
                 password:hashedpassword,
                 bio,
-                avatarUrl
+                avatarUrl,
+                refreshToken:""
             },
         });
+         console.log("Sucessfully saved data on db");
         //send response
         res.status(201).json(new Apiresponse(200,createduser,"User created successfully"));
         //After Succesfull signup user will be redirected to login page where we will generate access and refresh token
     } catch (error) {
+         console.error("Error creating user:", error);
         throw new Apierror(500,"Something went wrong while registering the user")   
     }
 }
@@ -69,6 +77,7 @@ const loginUser=async(req,res)=>{
         //All good
         res.status(200).json(new Apiresponse(200,{user,accessToken},"User logged in successfully"))
     } catch (error) {
+        console.log("Error logging in user",error);
          throw new Apierror(500,"Something went wrong while Logging") 
     }
 }

@@ -5,13 +5,13 @@ import cookieParser from "cookie-parser"
 //Intialize app creating an instance of express application
 const app=express()
 app.use(cors({
-     origin:process.env.CORS_ORIGIN,
+     origin:"*", //For now allow request from everywhere
     credentials:true
 }))
 
 app.use(express.json());
-app.use(urlencoded({extended:true,limit:"16kb"}));
- app.use(express.static("public"));
+app.use(urlencoded({extended:true}));
+app.use(express.static("public"));
  app.use(cookieParser());
 
  //User
