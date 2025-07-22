@@ -66,16 +66,8 @@ export default function Login({ onLogin, onSwitchToRegister, onBackToHome }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="text-center">
-          <button
-            onClick={onBackToHome}
-            className="text-2xl font-bold text-gray-900 hover:text-blue-600 transition-colors"
-          >
-            <span className="text-blue-600">Dev</span>Connect
-          </button>
-        </div>
         <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">Welcome back</h2>
         <p className="mt-2 text-center text-sm text-gray-600">Sign in to your developer account</p>
       </div>
