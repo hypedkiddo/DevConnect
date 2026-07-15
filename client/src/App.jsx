@@ -1,73 +1,18 @@
-"use client"
-import { useState } from "react"
-import Register from "./components/register"
-import Login from "./components/login"
-import Layout from "./components/layout"
-import './App.css'
+// App.jsx
+import { useNavigate } from "react-router-dom";
+import Layout from "./components/layout";
+import {QueryClient,QueryClientProvider} from '@tanstack/react-query';
+import "./App.css";
+
+//Creating an client...
+const queryClient=new QueryClient();
 
 export default function HomePage() {
-  const [currentView, setCurrentView] = useState("landing") // 'landing', 'login', 'register'
-  const [user, setUser] = useState(null) // null when not logged in 
-
-  const handleLogin = (userData) => {
-    setUser(userData)
-    setCurrentView("landing")
-  }
-
-  const handleLogout = () => {
-    setUser(null)
-    setCurrentView("landing")
-  }
-
-  const handleRegister = (userData) => {
-    setUser(userData)
-    setCurrentView("landing")
-  }
-
-  if (currentView === "login") {
-    return (
-      <Layout
-        user={user}
-        onLogin={() => setCurrentView("login")}
-        onRegister={() => setCurrentView("register")}
-        onHome={() => setCurrentView("landing")}
-        onLogout={handleLogout}
-      >
-        <Login
-          onLogin={handleLogin}
-          onSwitchToRegister={() => setCurrentView("register")}
-          onBackToHome={() => setCurrentView("landing")}
-        />
-      </Layout>
-    )
-  }
-
-  if (currentView === "register") {
-    return (
-      <Layout
-        user={user}
-        onLogin={() => setCurrentView("login")}
-        onRegister={() => setCurrentView("register")}
-        onHome={() => setCurrentView("landing")}
-        onLogout={handleLogout}
-      >
-        <Register
-          onRegister={handleRegister}
-          onSwitchToLogin={() => setCurrentView("login")}
-          onBackToHome={() => setCurrentView("landing")}
-        />
-      </Layout>
-    )
-  }
+  const navigate = useNavigate();
 
   return (
-    <Layout
-      user={user}
-      onLogin={() => setCurrentView("login")}
-      onRegister={() => setCurrentView("register")}
-      onHome={() => setCurrentView("landing")}
-      onLogout={handleLogout}
-    >
+    <QueryClientProvider client={queryClient}>
+    <Layout>
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="py-20 text-center">
@@ -84,13 +29,13 @@ export default function HomePage() {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <button
-                onClick={() => setCurrentView("register")}
+                onClick={() => navigate("/register")}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-semibold transition-colors shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
               >
                 Get Started
               </button>
               <button
-                onClick={() => setCurrentView("login")}
+                onClick={() => navigate("/login")}
                 className="border-2 border-gray-300 hover:border-gray-400 text-gray-700 hover:text-gray-900 px-8 py-4 rounded-lg text-lg font-semibold transition-colors"
               >
                 Login
@@ -154,5 +99,6 @@ export default function HomePage() {
         </div>
       </div>
     </Layout>
-  )
+    </QueryClientProvider>
+  );
 }

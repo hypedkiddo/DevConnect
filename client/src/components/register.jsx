@@ -1,8 +1,14 @@
-"use client"
+"use client";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
 
-import { useState } from "react"
+import Layout from "./layout";
 
-export default function Register({ onRegister, onSwitchToLogin, onBackToHome }) {
+export default function Register({ onRegister }) {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -10,258 +16,294 @@ export default function Register({ onRegister, onSwitchToLogin, onBackToHome }) 
     confirmPassword: "",
     bio: "",
     profilePhoto: null,
-  })
-  const [errors, setErrors] = useState({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [profilePhotoPreview, setProfilePhotoPreview] = useState(null)
+  });
+
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState(null);
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-    // Clear error when user starts typing
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
     if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: "",
-      }))
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
-  }
+  };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        // 5MB limit
-        setErrors((prev) => ({
-          ...prev,
-          profilePhoto: "File size must be less than 5MB",
-        }))
-        return
-      }
+    const file = e.target.files[0];
+    if (!file) return;
 
-      if (!file.type.startsWith("image/")) {
-        setErrors((prev) => ({
-          ...prev,
-          profilePhoto: "Please select a valid image file",
-        }))
-        return
-      }
-
-      setFormData((prev) => ({
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors((prev) => ({
         ...prev,
-        profilePhoto: file,
-      }))
-
-      // Create preview URL
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setProfilePhotoPreview(reader.result)
-      }
-      reader.readAsDataURL(file)
-
-      // Clear any existing error
-      if (errors.profilePhoto) {
-        setErrors((prev) => ({
-          ...prev,
-          profilePhoto: "",
-        }))
-      }
+        profilePhoto: "File must be under 5MB",
+      }));
+      return;
     }
-  }
+
+    if (!file.type.startsWith("image/")) {
+      setErrors((prev) => ({
+        ...prev,
+        profilePhoto: "Invalid image type",
+      }));
+      return;
+    }
+
+    setFormData((prev) => ({ ...prev, profilePhoto: file }));
+
+    const reader = new FileReader();
+    reader.onloadend = () => setProfilePhotoPreview(reader.result);
+    reader.readAsDataURL(file);
+
+    if (errors.profilePhoto) {
+      setErrors((prev) => ({ ...prev, profilePhoto: "" }));
+    }
+  };
 
   const validateForm = () => {
-    const newErrors = {}
+    const newErrors = {};
 
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = "Full name is required"
+    if (!formData.username.trim()) newErrors.username = "Name is required";
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(formData.email))
+      newErrors.email = "Invalid email";
+
+    if (!formData.password) newErrors.password = "Password is required";
+    else if (formData.password.length < 6)
+      newErrors.password = "Password must be at least 6 characters";
+
+    if (!formData.confirmPassword)
+      newErrors.confirmPassword = "Please confirm your password";
+    else if (formData.password !== formData.confirmPassword)
+      newErrors.confirmPassword = "Passwords do not match";
+
+    if (formData.bio && formData.bio.length > 500)
+      newErrors.bio = "Bio must be under 500 characters";
+
+    return newErrors;
+  };
+
+  //handle register user function
+  const registerUser = async (formData) => {
+    const data = new FormData();
+    data.append("username", formData.username);
+    data.append("email", formData.email);
+    data.append("password", formData.password);
+    data.append("confirmPassword", formData.confirmPassword);
+    data.append("bio", formData.bio);
+    if (formData.avatarUrl ) {
+      data.append("avatarUrl ", formData.avatarUrl);
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required"
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Email is invalid"
-    }
+    //the important work
+    const response = await axios.post(
+      "http://localhost:5000/api/v1/users/register",
+      data,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
 
-    if (!formData.password) {
-      newErrors.password = "Password is required"
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters"
-    }
+    return response.data;
+  };
 
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = "Please confirm your password"
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match"
-    }
+  const mutation = useMutation({
+    mutationFn: registerUser,
+    onSuccess: (data) => {
+      console.log("User registered:", data);
+      onRegister(data); // optionally pass to parent
+      navigate("/login"); // or wherever you want
+    },
+    onError: (error) => {
+      console.error("Registration error:", error);
+      alert(error?.response?.data?.message || "Registration failed");
+    },
+  });
 
-    if (formData.bio && formData.bio.length > 500) {
-      newErrors.bio = "Bio must be less than 500 characters"
-    }
-
-    return newErrors
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    const newErrors = validateForm()
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const newErrors = validateForm();
 
     if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors)
-      return
+      setErrors(newErrors);
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      const userData = {
-        id: Date.now(),
-        name: formData.fullName,
-        email: formData.email,
-        bio: formData.bio,
-        avatar:
-          profilePhotoPreview ||
-          `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.fullName)}&background=3b82f6&color=fff`,
-      }
-      onRegister(userData)
-      setIsSubmitting(false)
-    }, 1000)
-  }
+    mutation.mutate(formData,{
+      onSettled:()=>setIsSubmitting(false),
+    })    
+
+  };
 
   return (
-    <div className="flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">Create your account</h2>
-        <p className="mt-2 text-center text-sm text-gray-600">Join the developer community today</p>
-      </div>
+    <Layout>
+      <div className="flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          <h2 className="text-center text-3xl font-bold text-gray-900">
+            Create your account
+          </h2>
+          <p className="text-center text-sm text-gray-600 mt-2">
+            Join the developer community today
+          </p>
+        </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-gray-200">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                Full Name
-              </label>
-              <div className="mt-1">
+        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-gray-200">
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              {/* Full Name */}
+              <div>
+                <label
+                  htmlFor="fullName"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  username
+                </label>
                 <input
                   id="fullName"
                   name="fullName"
                   type="text"
-                  autoComplete="name"
-                  value={formData.fullName}
+                  value={formData.username}
                   onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border ${
+                  className={`mt-1 w-full px-3 py-2 border ${
                     errors.fullName ? "border-red-300" : "border-gray-300"
-                  } rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+                  } rounded-md sm:text-sm`}
                   placeholder="Enter your full name"
                 />
-                {errors.fullName && <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>}
+                {errors.fullName && (
+                  <p className="text-sm text-red-600">{errors.fullName}</p>
+                )}
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <div className="mt-1">
+              {/* Email */}
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Email
+                </label>
                 <input
                   id="email"
                   name="email"
                   type="email"
-                  autoComplete="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border ${
+                  className={`mt-1 w-full px-3 py-2 border ${
                     errors.email ? "border-red-300" : "border-gray-300"
-                  } rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+                  } rounded-md sm:text-sm`}
                   placeholder="Enter your email"
                 />
-                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                {errors.email && (
+                  <p className="text-sm text-red-600">{errors.email}</p>
+                )}
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1">
+              {/* Password */}
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Password
+                </label>
                 <input
                   id="password"
                   name="password"
                   type="password"
-                  autoComplete="new-password"
                   value={formData.password}
                   onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border ${
+                  className={`mt-1 w-full px-3 py-2 border ${
                     errors.password ? "border-red-300" : "border-gray-300"
-                  } rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+                  } rounded-md sm:text-sm`}
                   placeholder="Create a password"
                 />
-                {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+                {errors.password && (
+                  <p className="text-sm text-red-600">{errors.password}</p>
+                )}
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
-              <div className="mt-1">
+              {/* Confirm Password */}
+              <div>
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Confirm Password
+                </label>
                 <input
                   id="confirmPassword"
                   name="confirmPassword"
                   type="password"
-                  autoComplete="new-password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.confirmPassword ? "border-red-300" : "border-gray-300"
-                  } rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
+                  className={`mt-1 w-full px-3 py-2 border ${
+                    errors.confirmPassword
+                      ? "border-red-300"
+                      : "border-gray-300"
+                  } rounded-md sm:text-sm`}
                   placeholder="Confirm your password"
                 />
-                {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
+                {errors.confirmPassword && (
+                  <p className="text-sm text-red-600">
+                    {errors.confirmPassword}
+                  </p>
+                )}
               </div>
-            </div>
 
-            <div>
-              <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
-                Bio (Optional)
-              </label>
-              <div className="mt-1">
+              {/* Bio */}
+              <div>
+                <label
+                  htmlFor="bio"
+                  className="block text-sm font-medium text-gray-700"
+                >
+                  Bio (Optional)
+                </label>
                 <textarea
                   id="bio"
                   name="bio"
                   rows={3}
                   value={formData.bio}
                   onChange={handleChange}
-                  className={`appearance-none block w-full px-3 py-2 border ${
-                    errors.bio ? "border-red-300" : "border-gray-300"
-                  } rounded-md placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm resize-none`}
-                  placeholder="Tell us a bit about yourself..."
                   maxLength={500}
+                  className={`mt-1 w-full px-3 py-2 border ${
+                    errors.bio ? "border-red-300" : "border-gray-300"
+                  } rounded-md sm:text-sm resize-none`}
+                  placeholder="Tell us about yourself..."
                 />
-                <div className="mt-1 flex justify-between">
-                  {errors.bio && <p className="text-sm text-red-600">{errors.bio}</p>}
-                  <p className="text-sm text-gray-500 ml-auto">{formData.bio.length}/500 characters</p>
+                <div className="flex justify-between text-sm mt-1">
+                  {errors.bio && <p className="text-red-600">{errors.bio}</p>}
+                  <p className="text-gray-500 ml-auto">
+                    {formData.bio.length}/500
+                  </p>
                 </div>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Profile Photo (Optional)</label>
-              <div className="flex items-center space-x-4">
-                <div className="flex-shrink-0">
+              {/* Profile Photo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Profile Photo (Optional)
+                </label>
+                <div className="flex items-center space-x-4">
                   {profilePhotoPreview ? (
                     <img
-                      className="h-16 w-16 rounded-full object-cover border-2 border-gray-200"
-                      src={profilePhotoPreview || "/placeholder.svg"}
-                      alt="Profile preview"
+                      className="h-16 w-16 rounded-full object-cover border"
+                      src={profilePhotoPreview}
+                      alt="Profile"
                     />
                   ) : (
                     <div className="h-16 w-16 rounded-full bg-gray-200 flex items-center justify-center">
-                      <svg className="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg
+                        className="w-8 h-8 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -271,89 +313,58 @@ export default function Register({ onRegister, onSwitchToLogin, onBackToHome }) 
                       </svg>
                     </div>
                   )}
+                  <div>
+                    <input
+                      type="file"
+                      id="profilePhoto"
+                      name="avatarUrl"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="profilePhoto"
+                      className="cursor-pointer text-sm font-medium text-blue-600 hover:underline"
+                    >
+                      Upload Photo
+                    </label>
+                    {formData.avatarUrl  && (
+                      <p className="text-sm text-gray-600">
+                        {formData.avatarUrl.name}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <input
-                    type="file"
-                    id="profilePhoto"
-                    name="profilePhoto"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                  <label
-                    htmlFor="profilePhoto"
-                    className="cursor-pointer inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500 transition-colors"
-                  >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                      />
-                    </svg>
-                    Upload Photo
-                  </label>
-                  {formData.profilePhoto && <p className="mt-1 text-sm text-gray-600">{formData.profilePhoto.name}</p>}
-                </div>
+                {errors.profilePhoto && (
+                  <p className="text-sm text-red-600">{errors.profilePhoto}</p>
+                )}
               </div>
-              {errors.profilePhoto && <p className="mt-1 text-sm text-red-600">{errors.profilePhoto}</p>}
-              <p className="mt-1 text-sm text-gray-500">JPG, PNG, GIF up to 5MB</p>
-            </div>
 
-            <div>
+              {/* Submit */}
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full py-2 px-4 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
               >
-                {isSubmitting ? (
-                  <div className="flex items-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Creating account...
-                  </div>
-                ) : (
-                  "Create Account"
-                )}
+                {isSubmitting ? "Creating account..." : "Create Account"}
               </button>
-            </div>
-          </form>
+            </form>
 
-          <div className="mt-6">
-            <div className="text-center">
-              <span className="text-sm text-gray-600">
+            {/* Switch to Login */}
+            <div className="text-center mt-6">
+              <p className="text-sm text-gray-600">
                 Already have an account?{" "}
                 <button
-                  onClick={onSwitchToLogin}
-                  className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                  onClick={() => navigate("/login")}
+                  className="text-blue-600 font-medium hover:underline"
                 >
                   Sign in here
                 </button>
-              </span>
+              </p>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  )
+    </Layout>
+  );
 }

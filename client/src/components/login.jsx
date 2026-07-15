@@ -1,8 +1,11 @@
 "use client"
 
 import { useState } from "react"
+import Layout from "./layout"
+import { useNavigate } from "react-router-dom"
 
-export default function Login({ onLogin, onSwitchToRegister, onBackToHome }) {
+export default function Login({ onLogin}) {
+  const navigate=useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -66,6 +69,7 @@ export default function Login({ onLogin, onSwitchToRegister, onBackToHome }) {
   }
 
   return (
+    <Layout>
     <div className="flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">Welcome back</h2>
@@ -179,7 +183,7 @@ export default function Login({ onLogin, onSwitchToRegister, onBackToHome }) {
               <span className="text-sm text-gray-600">
                 Don't have an account?{" "}
                 <button
-                  onClick={onSwitchToRegister}
+                  onClick={()=>navigate("/register")}
                   className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
                 >
                   Register here
@@ -190,5 +194,6 @@ export default function Login({ onLogin, onSwitchToRegister, onBackToHome }) {
         </div>
       </div>
     </div>
+    </Layout>
   )
 }
